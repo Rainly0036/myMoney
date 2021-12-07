@@ -2,24 +2,30 @@ import { useState, useEffect } from 'react'
 import { projectAuth } from '../Firebase/config'
 import { useAuthContext } from './useAuthContext'
 
-export const useLogOut = () => {
+export const useLogin = () => {
   const [isCancelled, setIsCancelled] = useState(false)
   const [error, setError] = useState(null)
   const [isPending, setIsPending] = useState(false)
   const { dispatch } = useAuthContext()
-  
-  const logout = async () => {
+
+  const login = async (email, password) => {
     setError(null)
     setIsPending(true)
-
+  
     try {
-      // sign the user out
-      await projectAuth.signOut()
-      
-      // dispatch logout action
-      dispatch({ type: 'LOGOUT' })
+      if (!email) {
+        setError('Email is required.');
+        return setIsPending(false);
+      } else if (!password) {
+        setError('Password is required.');
+        return setIsPending(false);
+      }
+      // login
+      const res = await projectAuth.signInWithEmailAndPassword(email, password)
 
-      // update state
+      // dispatch login action
+      dispatch({ type: 'LOGIN', payload: res.user })
+
       if (!isCancelled) {
         setIsPending(false)
         setError(null)
@@ -28,7 +34,6 @@ export const useLogOut = () => {
     
     catch(err) {
       if (!isCancelled) {
-        console.log(err.message)
         setError(err.message)
         setIsPending(false)
       }
@@ -38,5 +43,6 @@ export const useLogOut = () => {
   useEffect(() => {
     return () => setIsCancelled(true)
   }, [])
-  return { logout, error, isPending }
+
+  return { login, isPending, error }
 }
